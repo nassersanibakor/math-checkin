@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>สแกนเช็คชื่อ - คณิตศาสตร์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{--green:#06d6a0;--green-d:#1b9e5a;--yellow:#ffd166;--red:#ef476f;--blue:#118ab2;--orange:#f8961e;--bg:#fff8e7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Sarabun',sans-serif;background:var(--bg);color:#2d3436;font-size:18px}
+  h1,h2,h3,.btn,.kanit{font-family:'Kanit',sans-serif}
+  .hidden{display:none!important}
+  .wrap{max-width:720px;margin:0 auto;padding:12px}
+  .muted{color:#777}.small{font-size:15px}
+  .btn{border:none;border-radius:16px;padding:14px 20px;font-size:20px;color:#fff;cursor:pointer;min-height:56px;box-shadow:0 3px 0 rgba(0,0,0,.18)}
+  .btn:active{transform:translateY(2px)}
+  .btn-blue{background:var(--blue)}.btn-green{background:var(--green-d)}.btn-red{background:var(--red)}
+  .btn-ghost{background:rgba(255,255,255,.25);font-size:16px;min-height:44px;padding:8px 14px}
+  input{font-family:inherit;font-size:18px;padding:10px;border:2px solid #ccd;border-radius:12px;width:100%;min-height:50px}
+  #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#ffd166,#06d6a0,#118ab2)}
+  .login-card{background:#fff;border-radius:24px;padding:28px 22px;max-width:440px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+  #pinInput{font-size:32px;text-align:center;letter-spacing:10px;margin:14px 0}
+  details{margin-top:16px;text-align:left;background:#f6f9fc;border-radius:12px;padding:10px}
+  summary{cursor:pointer;font-weight:600}
+  #loginMsg{color:#b00020;margin-top:10px;min-height:24px}
+  .topbar{background:linear-gradient(90deg,#118ab2,#06d6a0);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px}
+  .topbar a{color:#fff}
+  .rooms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  .room-btn{font-family:'Kanit';font-size:24px;padding:14px 0;border-radius:16px;border:4px solid transparent;color:#fff;cursor:pointer;opacity:.5}
+  .room-btn.active{opacity:1;border-color:#2d3436}
+  .room-btn:nth-child(1){background:#ef476f}.room-btn:nth-child(2){background:#f8961e}.room-btn:nth-child(3){background:#8e44ad}
+  .date-row{display:flex;gap:10px;align-items:center}
+  .date-row label{font-weight:600;white-space:nowrap}
+  .notice{background:#fff3cd;border-left:6px solid var(--orange);padding:10px;border-radius:10px;margin-top:10px}
+  .box{background:#fff;border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 3px 10px rgba(0,0,0,.06)}
+  .counter{font-family:'Kanit';font-size:46px;color:var(--green-d);text-align:center;line-height:1.2}
+  .progress{height:14px;background:#eee;border-radius:999px;overflow:hidden;margin-top:8px}
+  .progress>div{height:100%;width:0;background:linear-gradient(90deg,#06d6a0,#1b9e5a);transition:width .4s}
+  .sub{text-align:center;color:#666;font-size:16px;margin-top:6px}
+  #scanBtn{width:100%;font-size:26px;padding:18px}
+  #reader{width:100%;max-width:560px;margin:12px auto;border-radius:16px;overflow:hidden;background:#000}
+  #scanState{text-align:center;font-family:'Kanit';color:#555;min-height:26px}
+  .result{border-radius:20px;padding:18px;text-align:center;background:#fff;border:6px solid #ddd;min-height:150px}
+  .r-title{font-family:'Kanit';font-size:30px;font-weight:700}
+  .r-name{font-family:'Kanit';font-size:40px;font-weight:700;line-height:1.25;margin:6px 0;word-break:break-word}
+  .r-detail{font-size:22px}
+  .result.success{border-color:#1b9e5a;background:#e3fbe9}.result.success .r-title{color:#1b9e5a}
+  .result.late{border-color:#f8961e;background:#fff1dc}.result.late .r-title{color:#c46a00}
+  .result.warn{border-color:#f4b400;background:#fff8d1}.result.warn .r-title{color:#a67800}
+  .result.error{border-color:#ef476f;background:#ffe3ea}.result.error .r-title{color:#c0002a}
+  .result.loading .r-title{color:var(--blue)}
+  .recent{list-style:none;padding:0;margin:0}
+  .recent li{display:flex;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px dashed #eee}
+  .recent .t{margin-left:auto;color:#888}
+  .badge{padding:4px 12px;border-radius:999px;font-weight:600;font-size:15px}
+  .b-ok{background:#c8f7d4;color:#1e7e34}.b-late{background:#fff3b0;color:#8a6d00}
+  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:90}
+  #flash.on{animation:flash 1s ease-out}
+  @keyframes flash{0%{opacity:.8}20%{opacity:.1}40%{opacity:.7}60%{opacity:.1}80%{opacity:.45}100%{opacity:0}}
+  #loading{position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Kanit';font-size:20px}
+  .spinner{width:56px;height:56px;border:6px solid #ddd;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<div id="loading" class="hidden"><div class="spinner"></div><div id="loadingText">กำลังโหลด...</div></div>
+
+<!-- ===== หน้าเข้าสู่ระบบ ===== -->
+<section id="loginView">
+  <div class="login-card">
+    <div style="font-size:60px">📷</div>
+    <h1 style="margin:6px 0">สแกนเช็คชื่อ<br>วิชาคณิตศาสตร์</h1>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="12" placeholder="รหัส PIN" autocomplete="off">
+    <button class="btn btn-blue" style="width:100%" onclick="login(false)">เข้าสู่ระบบ</button>
+    <div id="loginMsg"></div>
+    <details id="apiBox">
+      <summary>⚙️ ตั้งค่าลิงก์ Web App</summary>
+      <p class="small muted">วางลิงก์ Web App ที่ลงท้ายด้วย <b>/exec</b> (ทำครั้งเดียว เครื่องจะจำไว้)</p>
+      <input id="apiInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    </details>
+  </div>
+</section>
+
+<!-- ===== หน้าสแกน ===== -->
+<section id="mainView" class="hidden">
+  <div class="topbar">
+    <div class="kanit" style="font-size:20px">📷 สแกนเช็คชื่อ</div>
+    <div>
+      <a id="manageLink" href="#" target="_blank" class="small">หน้าจัดการ</a>
+      <button class="btn btn-ghost" onclick="logout()">ออก</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div id="roomBtns" class="rooms"></div>
+    <div class="date-row">
+      <label for="dateInput">วันที่</label>
+      <input type="date" id="dateInput" onchange="changeDate()">
+    </div>
+    <div id="dateNotice" class="notice hidden">กำลังเช็คชื่อ <b>ย้อนหลัง/ล่วงหน้า</b> ทุกคนจะถูกบันทึกเป็น "มาเรียน" (ไม่คิดสาย)</div>
+
+    <div class="box">
+      <div id="counter" class="counter">มาแล้ว -/- คน</div>
+      <div class="progress"><div id="bar"></div></div>
+      <div id="counterSub" class="sub"></div>
+    </div>
+
+    <button id="scanBtn" class="btn btn-green" onclick="toggleScan()">▶️ เริ่มสแกน</button>
+    <div id="reader" class="hidden"></div>
+    <div id="scanState"></div>
+
+    <div id="result" class="result">
+      <div class="r-title">พร้อมใช้งาน</div>
+      <div class="r-detail muted">กด "เริ่มสแกน" แล้วหันบัตร QR ของนักเรียนเข้าหากล้อง</div>
+    </div>
+
+    <div class="box">
+      <h3 style="margin:0 0 6px">สแกนล่าสุด 5 คน</h3>
+      <ul id="recent" class="recent"><li class="muted">ยังไม่มีการสแกน</li></ul>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ============================================================
+   ตั้งค่า: (ไม่บังคับ) วางลิงก์ Web App ที่ลงท้ายด้วย /exec ระหว่าง '' ด้านล่าง
+   ถ้าเว้นว่างไว้ ระบบจะรับลิงก์จากปุ่ม "เริ่มสแกน" ในหน้าจัดการให้อัตโนมัติ
+   ============================================================ */
+const DEFAULT_API_URL = '';
+
+const ROOMS = ['ป.6/1', 'ป.6/2', 'ป.6/3'];
+const COOLDOWN_MS = 2000;          // หน่วงเวลาหลังสแกน 2 วินาที
+const SAME_CODE_IGNORE_MS = 6000;  // บัตรใบเดิมที่ยังค้างหน้ากล้อง จะไม่ถูกอ่านซ้ำภายใน 6 วินาที
+
+const S = { api:'', pin:'', room:ROOMS[0], date:'', scanner:null, scanning:false, busy:false,
+            lastCode:'', lastCodeAt:0, audio:null, wake:null, timer:null };
+
+/* ---------- ฟังก์ชันช่วยเหลือ ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function todayBkk(){ return new Date().toLocaleDateString('en-CA', { timeZone:'Asia/Bangkok' }); }
+function lsGet(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+function lsSet(k,v){ try { localStorage.setItem(k, v); } catch(e){} }
+function ssGet(k){ try { return sessionStorage.getItem(k) || ''; } catch(e){ return ''; } }
+function ssSet(k,v){ try { sessionStorage.setItem(k, v); } catch(e){} }
+function ssDel(k){ try { sessionStorage.removeItem(k); } catch(e){} }
+function showLoading(m){ $('loadingText').textContent = m || 'กำลังโหลด...'; $('loading').classList.remove('hidden'); }
+function hideLoading(){ $('loading').classList.add('hidden'); }
+
+/** ส่งคำสั่งไป Apps Script (POST แบบ text/plain เพื่อเลี่ยงปัญหา CORS) */
+async function api(action, params){
+  if (!S.api) throw new Error('ยังไม่ได้ตั้งค่าลิงก์ Web App');
+  if (!navigator.onLine) throw new Error('ไม่มีการเชื่อมต่ออินเทอร์เน็ต');
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 20000);
+  let res;
+  try {
+    res = await fetch(S.api, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ action: action, pin: S.pin }, params || {})),
+      signal: ctrl.signal
+    });
+  } catch(e){
+    if (e.name === 'AbortError') throw new Error('เซิร์ฟเวอร์ตอบช้าเกินไป กรุณาลองใหม่');
+    throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจสอบอินเทอร์เน็ต และการ Deploy (Who has access: Anyone)');
+  } finally { clearTimeout(t); }
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e){ throw new Error('ข้อมูลตอบกลับไม่ถูกต้อง — ตรวจสอบว่าลิงก์ลงท้ายด้วย /exec และ Who has access เป็น Anyone'); }
+  if (!data.ok) throw new Error(data.message || 'เกิดข้อผิดพลาด');
+  return data.data;
+}
+
+/* ---------- เริ่มต้นหน้า: อ่านลิงก์ Web App และห้องจาก URL ---------- */
+function initPage(){
+  const q = new URLSearchParams(location.search);
+  const apiParam = q.get('api'), roomParam = q.get('room');
+  if (apiParam) lsSet('math_api', apiParam);
+  S.api = apiParam || lsGet('math_api') || DEFAULT_API_URL;
+  if (roomParam && ROOMS.includes(roomParam)) S.room = roomParam;
+  else if (ROOMS.includes(lsGet('math_room'))) S.room = lsGet('math_room');
+  $('apiInput').value = S.api;
+  if (!S.api) $('apiBox').open = true;
+  $('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') login(false); });
+  S.pin = ssGet('math_pin');
+  if (S.pin && S.api) login(true);
+}
+
+/** เข้าสู่ระบบด้วย PIN */
+async function login(silent){
+  const apiVal = $('apiInput').value.trim();
+  if (apiVal){ S.api = apiVal; lsSet('math_api', apiVal); }
+  if (!S.api){ $('loginMsg').textContent = 'กรุณาใส่ลิงก์ Web App ก่อน'; $('apiBox').open = true; return; }
+  if (!/\/exec(\?.*)?$/.test(S.api)) $('loginMsg').textContent = 'คำเตือน: ลิงก์ Web App ควรลงท้ายด้วย /exec';
+  const pin = silent ? S.pin : $('pinInput').value.trim();
+  if (!pin){ $('loginMsg').textContent = 'กรุณาใส่รหัส PIN'; return; }
+  S.pin = pin;
+  showLoading('กำลังเข้าสู่ระบบ...');
+  try {
+    const init = await api('login');
+    ssSet('math_pin', pin);
+    enterMain(init);
+  } catch(e){
+    S.pin = ''; ssDel('math_pin'); $('pinInput').value = '';
+    $('loginMsg').textContent = e.message;
+  } finally { hideLoading(); }
+}
+
+function enterMain(init){
+  $('loginView').classList.add('hidden');
+  $('mainView').classList.remove('hidden');
+  $('manageLink').href = S.api;
+  S.date = init.today || todayBkk();
+  $('dateInput').value = S.date;
+  renderRooms();
+  loadStatus(false);
+  clearInterval(S.timer);
+  S.timer = setInterval(() => { if (!S.busy) loadStatus(true); }, 20000); // อัปเดตตัวนับทุก 20 วินาที
+}
+
+async function logout(){
+  await stopScan();
+  clearInterval(S.timer);
+  S.pin = ''; ssDel('math_pin');
+  $('mainView').classList.add('hidden');
+  $('loginView').classList.remove('hidden');
+  $('pinInput').value = ''; $('loginMsg').textContent = '';
+}
+
+/* ---------- เลือกห้องและวันที่ ---------- */
+function renderRooms(){
+  $('roomBtns').innerHTML = ROOMS.map(r =>
+    `<button class="room-btn ${r === S.room ? 'active' : ''}" onclick="selectRoom('${r}')">${r}</button>`).join('');
+}
+function selectRoom(r){
+  S.room = r; lsSet('math_room', r);
+  renderRooms(); loadStatus(false);
+  showResult('idle', 'เปลี่ยนเป็นห้อง ' + r, '', 'พร้อมสแกน');
+}
+function changeDate(){
+  S.date = $('dateInput').value || todayBkk();
+  $('dateNotice').classList.toggle('hidden', S.date === todayBkk());
+  loadStatus(false);
+}
+
+/** โหลดตัวนับและรายชื่อล่าสุดจากเซิร์ฟเวอร์ */
+async function loadStatus(silent){
+  try {
+    const res = await api('status', { room: S.room, date: S.date });
+    renderSummary(res.summary);
+  } catch(e){ if (!silent) showResult('error', 'โหลดข้อมูลไม่สำเร็จ', '', e.message); }
+}
+
+function renderSummary(s){
+  if (!s) return;
+  $('counter').textContent = `มาแล้ว ${s.present}/${s.total} คน`;
+  $('bar').style.width = (s.total ? Math.round(s.present * 100 / s.total) : 0) + '%';
+  $('counterSub').textContent = `ห้อง ${S.room} · ตรงเวลา ${s.onTime} · สาย ${s.late} · ลา ${s.leave} · ยังไม่เช็ค ${s.notYet}`;
+  $('recent').innerHTML = s.recent.length
+    ? s.recent.map(r => `<li><span class="badge ${r.status === 'มาสาย' ? 'b-late' : 'b-ok'}">${esc(r.status)}</span>
+        <span>เลขที่ ${esc(r.no)} ${esc(r.name)}</span><span class="t">${esc(r.time)} น.</span></li>`).join('')
+    : '<li class="muted">ยังไม่มีการสแกน</li>';
+}
+
+/* ---------- เสียง / ไฟกระพริบ / สั่น ---------- */
+function initAudio(){
+  try {
+    if (!S.audio) S.audio = new (window.AudioContext || window.webkitAudioContext)();
+    if (S.audio.state === 'suspended') S.audio.resume();
+  } catch(e){}
+}
+function beep(freq, dur, delay, type){
+  if (!S.audio) return;
+  const t = S.audio.currentTime + (delay || 0);
+  const o = S.audio.createOscillator(), g = S.audio.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.5, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(S.audio.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+function feedback(kind){
+  const colors = { success:'#06d6a0', warn:'#ffd166', error:'#ef476f' };
+  const f = $('flash');
+  f.style.background = colors[kind] || colors.success;
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  if (kind === 'success'){ beep(880, .12, 0); beep(1320, .2, .13); }
+  else if (kind === 'warn'){ beep(660, .15, 0, 'triangle'); beep(660, .15, .22, 'triangle'); }
+  else { beep(220, .45, 0, 'square'); }
+  try { navigator.vibrate && navigator.vibrate(kind === 'success' ? 120 : [120, 80, 120]); } catch(e){}
+}
+
+/** แสดงผลการสแกนตัวใหญ่ */
+function showResult(kind, title, name, detail){
+  const box = $('result');
+  box.className = 'result ' + (kind || '');
+  box.innerHTML = `<div class="r-title">${esc(title)}</div>` +
+    (name ? `<div class="r-name">${esc(name)}</div>` : '') +
+    (detail ? `<div class="r-detail">${esc(detail)}</div>` : '');
+}
+
+/* ---------- ควบคุมกล้อง ---------- */
+async function toggleScan(){ if (S.scanning) await stopScan(); else await startScan(); }
+
+function updateScanBtn(){
+  $('scanBtn').textContent = S.scanning ? '⏹️ หยุดสแกน' : '▶️ เริ่มสแกน';
+  $('scanBtn').className = 'btn ' + (S.scanning ? 'btn-red' : 'btn-green');
+  $('scanState').textContent = S.scanning ? 'พร้อมสแกนคนต่อไป' : '';
+}
+
+/** เปิดกล้องหลังและเริ่มอ่าน QR */
+async function startScan(){
+  initAudio(); // ต้องเริ่มเสียงจากการกดปุ่มของผู้ใช้
+  if (typeof Html5Qrcode === 'undefined'){
+    showResult('error', 'โหลดตัวสแกนไม่สำเร็จ', '', 'กรุณาตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้า'); return;
+  }
+  if (!window.isSecureContext){
+    showResult('error', 'ต้องเปิดผ่าน https:// เท่านั้น', '', 'กล้องจะทำงานเฉพาะเว็บที่ขึ้นต้นด้วย https://'); return;
+  }
+  $('reader').classList.remove('hidden');
+  try {
+    if (!S.scanner){
+      const cfg = { verbose: false };
+      if (typeof Html5QrcodeSupportedFormats !== 'undefined') cfg.formatsToSupport = [Html5QrcodeSupportedFormats.QR_CODE];
+      S.scanner = new Html5Qrcode('reader', cfg);
+    }
+    await S.scanner.start(
+      { facingMode: 'environment' },  // กล้องหลัง
+      { fps: 10, qrbox: (w, h) => { const m = Math.floor(Math.min(w, h) * 0.7); return { width: m, height: m }; } },
+      onScanSuccess,
+      () => {} // อ่านไม่เจอในแต่ละเฟรม ไม่ต้องทำอะไร
+    );
+    S.scanning = true; S.busy = false;
+    updateScanBtn();
+    showResult('idle', 'พร้อมสแกน', '', 'หันบัตร QR ของนักเรียนเข้าหากล้อง ห่างประมาณ 15–25 ซม.');
+    try { if ('wakeLock' in navigator) S.wake = await navigator.wakeLock.request('screen'); } catch(e){}
+  } catch(err){
+    $('reader').classList.add('hidden');
+    S.scanning = false; updateScanBtn();
+    showResult('error', 'เปิดกล้องไม่ได้', '', cameraErrorText(err));
+    feedback('error');
+  }
+}
+
+/** แปลงข้อผิดพลาดกล้องเป็นภาษาไทย */
+function cameraErrorText(err){
+  const m = String((err && (err.name || err.message)) || err);
+  if (/NotAllowed|Permission/i.test(m)) return 'ยังไม่ได้อนุญาตให้ใช้กล้อง: แตะไอคอนด้านซ้ายของแถบที่อยู่เว็บ > สิทธิ์ > กล้อง > อนุญาต แล้วรีเฟรชหน้า';
+  if (/NotFound|not found/i.test(m)) return 'ไม่พบกล้องบนอุปกรณ์นี้';
+  if (/NotReadable|in use|TrackStart|Could not start/i.test(m)) return 'กล้องถูกใช้งานโดยแอปอื่นอยู่ กรุณาปิดแอปกล้องหรือแอปอื่นแล้วลองใหม่';
+  return 'รายละเอียด: ' + m;
+}
+
+/** หยุดกล้อง */
+async function stopScan(){
+  try { if (S.scanner && S.scanning) await S.scanner.stop(); } catch(e){}
+  S.scanning = false; S.busy = false;
+  $('reader').classList.add('hidden');
+  updateScanBtn();
+  try { if (S.wake){ await S.wake.release(); S.wake = null; } } catch(e){}
+}
+
+/** ทำงานเมื่ออ่าน QR ได้ */
+async function onScanSuccess(decodedText){
+  const code = String(decodedText || '').trim();
+  const now = Date.now();
+  if (S.busy) return;
+  if (code === S.lastCode && now - S.lastCodeAt < SAME_CODE_IGNORE_MS) return;
+  S.busy = true; S.lastCode = code; S.lastCodeAt = now;
+  try { S.scanner.pause(true); } catch(e){}
+  showResult('loading', 'กำลังบันทึก...', '', code);
+  $('scanState').textContent = 'กำลังบันทึก...';
+
+  try {
+    const r = await api('scan', { room: S.room, date: S.date, code: code });
+    handleScanResult(r);
+  } catch(e){
+    showResult('error', 'บันทึกไม่สำเร็จ', '', e.message);
+    feedback('error');
+  }
+
+  $('scanState').textContent = 'รอ 2 วินาที...';
+  setTimeout(() => {
+    S.busy = false;
+    S.lastCodeAt = Date.now();
+    try { if (S.scanning) S.scanner.resume(); } catch(e){}
+    if (S.scanning) $('scanState').textContent = 'พร้อมสแกนคนต่อไป';
+  }, COOLDOWN_MS);
+}
+
+/** แสดงผลตามประเภทผลลัพธ์ */
+function handleScanResult(r){
+  const st = r.student || {};
+  if (r.type === 'success'){
+    const late = r.status === 'มาสาย';
+    showResult(late ? 'late' : 'success', (late ? '⏰ ' : '✅ ') + r.status, st.name,
+      `เลขที่ ${st.no} · ห้อง ${st.room} · เวลา ${r.time} น.`);
+    feedback('success');
+  } else if (r.type === 'duplicate'){
+    showResult('warn', '⚠️ ' + r.message, st.name, `เลขที่ ${st.no} · สถานะ: ${r.status}`);
+    feedback('warn');
+  } else if (r.type === 'wrongroom'){
+    showResult('error', '❌ ไม่ใช่นักเรียนห้อง ' + S.room, st.name, r.message);
+    feedback('error');
+  } else {
+    showResult('error', '❌ ไม่พบรหัสนักเรียนนี้', '', r.code ? 'ข้อมูลใน QR: ' + r.code : 'QR Code ไม่ถูกต้อง');
+    feedback('error');
+  }
+  if (r.summary) renderSummary(r.summary);
+}
+
+/* ถ้าสลับไปแอปอื่น ให้ปิดกล้อง (Android มักตัดกล้องอยู่แล้ว) */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.scanning){
+    stopScan();
+    showResult('idle', 'หยุดสแกนชั่วคราว', '', 'กด "เริ่มสแกน" อีกครั้งเพื่อสแกนต่อ');
+  }
+});
+
+initPage();
+</script>
+</body>
+</html>
